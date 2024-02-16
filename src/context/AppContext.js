@@ -1,28 +1,37 @@
-import { createContext,  useState } from "react";
-import { baseUrl} from "../baseUrk";
+import { createContext, useState } from "react";
+import { baseUrl } from "../baseUrk";
+import { useNavigate } from "react-router";
 // step1 context creation
 export const AppContext = createContext();
 
-export default function AppContextProvider({children}) {
-    const[loading,setLoading] = useState(false);
-    const[posts,setPosts] = useState([])
-    
-    const[page,setPage] = useState(1)
-    const[totalPages,setTotalPages] = useState(null)
-   
+export default function AppContextProvider({ children }) {
+    const [loading, setLoading] = useState(false);
+    const [posts, setPosts] = useState([])
+
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(null)
+    const navigate = useNavigate()
+
     // data filling pending
-    async function fetchBlogPosts(page = 1) {
+    async function fetchBlogPosts(page = 1, tag = null, category) {
         setLoading(true);
-        const url =` ${baseUrl}?page=${page}`
+        let url = ` ${baseUrl}?page=${page}`
+        if (tag) {
+            url += `&tag=${tag}`
+        }
+        if (category) {
+            url += `&category=${category}`
+        }
         console.log('printing the final url');
         console.log(url);
-        
+
         try {
-    
+
             const result = await fetch(url)
             const data = await result.json();
-          
-            console.log(data);
+            if (!data.posts || data.posts.length === 0)
+                throw new Error('something went wrong')
+            console.log("Api Response", data);
             setPage(data.page)
             setPosts(data.posts)
             setTotalPages(data.totalPages)
@@ -34,11 +43,13 @@ export default function AppContextProvider({children}) {
         }
         setLoading(false)
     }
- 
+
     function handlePageChange(page) {
+        navigate({search:`?page=${page}`});
         setPage(page)
         fetchBlogPosts(page)
-        
+       
+
     }
 
     const value = {
@@ -54,9 +65,9 @@ export default function AppContextProvider({children}) {
         handlePageChange,
 
     }
-// step 2 context provide
+    // step 2 context provide
     return <AppContext.Provider value={value}>
-         {children}
+        {children}
     </AppContext.Provider>
-    
+
 }
